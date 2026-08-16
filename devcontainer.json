@@ -1,0 +1,7 @@
+{
+  "name": "shared-web-dev",
+  "image": "mcr.microsoft.com/devcontainers/base:2.1.13-bookworm",
+  "features": {
+    "./src/web-dev": {}
+  }
+}

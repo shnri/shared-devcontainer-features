@@ -4,6 +4,20 @@ Webプロジェクトで共通利用するDev Container Featureです。各proje
 
 ## 利用方法
 
+### `.devcontainer`全体をsubmoduleにする
+
+project固有のDev Container設定が不要な場合は、このrepository自体を`.devcontainer`として追加できます。rootの`devcontainer.json`がlocal `web-dev` Featureを参照します。
+
+```bash
+git submodule add https://github.com/shnri/shared-devcontainer-features.git .devcontainer
+```
+
+この場合、VS Codeが読むpathは`.devcontainer/devcontainer.json`です。新しくcloneした後は、Dev Containerを開く前にsubmoduleを初期化してください。
+
+### project固有の設定を残す
+
+volume、workspace、lifecycle commandなどをproject側で変更する場合は、共有repositoryを`.devcontainer`配下のsubdirectoryへ追加します。
+
 まずconsumer repositoryへsubmoduleを追加します。
 
 ```bash
@@ -102,7 +116,7 @@ git add .devcontainer/shared-devcontainer-features
 
 ## このrepositoryを開発する
 
-repository自身の[`.devcontainer.json`](.devcontainer.json)にはNode.js 24、Dev Container CLI 0.88.0、Docker-in-Dockerを用意しています。Dev Containerで開いた後、次のcommandでFeatureをbuild testできます。
+rootの[`devcontainer.json`](devcontainer.json)は、consumerの`.devcontainer/devcontainer.json`として使用するentrypointです。repository単体でFeatureをtestする場合は、Dev Container CLIとDockerを用意して次のcommandを実行します。
 
 ```bash
 devcontainer features test --features web-dev .
