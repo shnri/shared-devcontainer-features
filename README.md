@@ -1,15 +1,23 @@
 # shared-devcontainer-features
 
-Webプロジェクトで共通利用するDev Container Featureです。各projectは`image`やworkspace設定などの入口だけを持ち、Node.js、Python、AI開発CLI、ブラウザなどの共通toolchainを`web-dev`から追加します。
+Webプロジェクトで共通利用するDev Container Featureです。各projectはこのrepositoryをGit submoduleとして固定し、`image`やworkspace設定などの入口だけを持ちます。Node.js、Python、AI開発CLI、ブラウザなどの共通toolchainはlocal `web-dev` Featureから追加します。
 
 ## 利用方法
+
+まずconsumer repositoryへsubmoduleを追加します。
+
+```bash
+git submodule add https://github.com/shnri/shared-devcontainer-features.git vendor/shared-devcontainer-features
+```
+
+`.devcontainer/devcontainer.json`から、`devcontainer.json`を基準とした相対pathでFeatureを参照します。
 
 ```jsonc
 {
   "name": "my-web-project",
   "image": "mcr.microsoft.com/devcontainers/base:2.1.13-bookworm",
   "features": {
-    "ghcr.io/shnri/shared-devcontainer-features/web-dev:1": {},
+    "../vendor/shared-devcontainer-features/src/web-dev": {},
   },
 }
 ```
@@ -26,7 +34,7 @@ Webプロジェクトで共通利用するDev Container Featureです。各proje
 - Claude Code/CodexのVS Code extension
 - Claude/Codexの認証・設定を保持するproject別named volume
 
-Claude CodeとCodexはremote user所有にするため、container作成後に公式standalone installerで導入します。versionを更新する場合はFeature optionを変更するか、このrepositoryで既定値を更新して新しいFeature versionをreleaseしてください。
+Claude CodeとCodexはremote user所有にするため、container作成後に公式standalone installerで導入します。versionを更新する場合はFeature optionを変更するか、このrepositoryで既定値を更新し、CI成功後にconsumerのsubmodule固定commitを進めてください。
 
 ## Options
 
@@ -44,7 +52,7 @@ Claude CodeとCodexはremote user所有にするため、container作成後に�
 `codexApprovalPolicy`と`codexSandboxMode`の既定値は`default`です。Featureはconsumerの安全設定を暗黙に弱めません。Dev Container自体を外側の隔離境界として扱うprojectだけが、例えば次のように明示します。
 
 ```jsonc
-"ghcr.io/shnri/shared-devcontainer-features/web-dev:1": {
+"../vendor/shared-devcontainer-features/src/web-dev": {
   "codexApprovalPolicy": "never",
   "codexSandboxMode": "danger-full-access"
 }
@@ -70,13 +78,17 @@ Featureの既定volume sourceには`${devcontainerId}`が含まれ、projectご�
 - project固有のportと環境変数
 - dependency installやsubmodule初期化などproject固有のlifecycle command
 
-## Release
+## 更新
 
-1. `src/web-dev/devcontainer-feature.json`の`version`を更新する。
-2. pull requestでCIを通してmainへmergeする。
-3. metadataと同じversionのtag（例: `v1.0.0`）をpushする。
+共有設定を変更するときは、このrepositoryのpull requestでCIを通してmainへmergeします。consumerは明示的にsubmoduleの固定commitを進め、同じ変更でDev Containerをrebuildします。
 
-tag workflowがcontainer build test後、`ghcr.io/shnri/shared-devcontainer-features/web-dev`へpublishします。初回publish後はGHCR packageをPublicに設定してください。
+```bash
+git -C vendor/shared-devcontainer-features fetch origin main
+git -C vendor/shared-devcontainer-features checkout <adopted-commit>
+git add vendor/shared-devcontainer-features
+```
+
+各consumerが固定commitを更新するまで環境は変わりません。GHCRへのpublishや、project間でのfile copyは行いません。
 
 ## このrepositoryを開発する
 
