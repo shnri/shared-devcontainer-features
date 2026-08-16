@@ -78,4 +78,12 @@ Featureの既定volume sourceには`${devcontainerId}`が含まれ、projectご�
 
 tag workflowがcontainer build test後、`ghcr.io/shnri/shared-devcontainer-features/web-dev`へpublishします。初回publish後はGHCR packageをPublicに設定してください。
 
+## このrepositoryを開発する
+
+repository自身の[`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json)にはNode.js 24、Dev Container CLI 0.88.0、Docker-in-Dockerを用意しています。Dev Containerで開いた後、次のcommandでFeatureをbuild testできます。
+
+```bash
+devcontainer features test --features web-dev .
+```
+
 構成と配布方法は[Dev Container Feature仕様](https://containers.dev/implementors/features/)および公式[feature-starter](https://github.com/devcontainers/feature-starter)に準拠します。
