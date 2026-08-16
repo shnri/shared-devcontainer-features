@@ -102,7 +102,7 @@ git add .devcontainer/shared-devcontainer-features
 
 ## このrepositoryを開発する
 
-repository自身の[`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json)にはNode.js 24、Dev Container CLI 0.88.0、Docker-in-Dockerを用意しています。Dev Containerで開いた後、次のcommandでFeatureをbuild testできます。
+repository自身の[`.devcontainer.json`](.devcontainer.json)にはNode.js 24、Dev Container CLI 0.88.0、Docker-in-Dockerを用意しています。Dev Containerで開いた後、次のcommandでFeatureをbuild testできます。
 
 ```bash
 devcontainer features test --features web-dev .
