@@ -7,7 +7,15 @@ Webプロジェクトで共通利用するDev Container Featureです。各proje
 まずconsumer repositoryへsubmoduleを追加します。
 
 ```bash
-git submodule add https://github.com/shnri/shared-devcontainer-features.git vendor/shared-devcontainer-features
+git submodule add https://github.com/shnri/shared-devcontainer-features.git .devcontainer/shared-devcontainer-features
+```
+
+既存consumerを新しくcloneするときは、Dev Containerを開く前にsubmoduleを初期化します。local Featureはcontainer作成前に読み込まれるため、project側の`postCreateCommand`だけでは初回初期化できません。
+
+```bash
+git clone --recurse-submodules <consumer-repository-url>
+# またはclone後に
+git submodule update --init --recursive
 ```
 
 `.devcontainer/devcontainer.json`から、`devcontainer.json`を基準とした相対pathでFeatureを参照します。
@@ -17,10 +25,12 @@ git submodule add https://github.com/shnri/shared-devcontainer-features.git vend
   "name": "my-web-project",
   "image": "mcr.microsoft.com/devcontainers/base:2.1.13-bookworm",
   "features": {
-    "../vendor/shared-devcontainer-features/src/web-dev": {},
+    "./shared-devcontainer-features/src/web-dev": {},
   },
 }
 ```
+
+Dev Container CLIはlocal Featureを`.devcontainer/`配下からだけ読み込むため、submoduleもこのdirectory内へ配置します。
 
 このFeatureはDebian Bookworm系のDev Container imageと、標準の`vscode` user（homeは`/home/vscode`）を対象にしています。
 
@@ -52,7 +62,7 @@ Claude CodeとCodexはremote user所有にするため、container作成後に�
 `codexApprovalPolicy`と`codexSandboxMode`の既定値は`default`です。Featureはconsumerの安全設定を暗黙に弱めません。Dev Container自体を外側の隔離境界として扱うprojectだけが、例えば次のように明示します。
 
 ```jsonc
-"../vendor/shared-devcontainer-features/src/web-dev": {
+"./shared-devcontainer-features/src/web-dev": {
   "codexApprovalPolicy": "never",
   "codexSandboxMode": "danger-full-access"
 }
@@ -83,9 +93,9 @@ Featureの既定volume sourceには`${devcontainerId}`が含まれ、projectご�
 共有設定を変更するときは、このrepositoryのpull requestでCIを通してmainへmergeします。consumerは明示的にsubmoduleの固定commitを進め、同じ変更でDev Containerをrebuildします。
 
 ```bash
-git -C vendor/shared-devcontainer-features fetch origin main
-git -C vendor/shared-devcontainer-features checkout <adopted-commit>
-git add vendor/shared-devcontainer-features
+git -C .devcontainer/shared-devcontainer-features fetch origin main
+git -C .devcontainer/shared-devcontainer-features checkout <adopted-commit>
+git add .devcontainer/shared-devcontainer-features
 ```
 
 各consumerが固定commitを更新するまで環境は変わりません。GHCRへのpublishや、project間でのfile copyは行いません。

@@ -4,7 +4,7 @@ Installs the shared web development toolchain used by shnri projects.
 
 ```jsonc
 "features": {
-  "../vendor/shared-devcontainer-features/src/web-dev": {}
+  "./shared-devcontainer-features/src/web-dev": {}
 }
 ```
 
