@@ -1,0 +1,89 @@
+{
+  "id": "web-dev",
+  "version": "1.0.0",
+  "name": "Shared Web Development",
+  "description": "Installs the shared Node.js, Python, browser, cloud, and AI-assisted development toolchain used by shnri web projects.",
+  "documentationURL": "https://github.com/shnri/shared-devcontainer-features/tree/main/src/web-dev",
+  "licenseURL": "https://github.com/shnri/shared-devcontainer-features/blob/main/LICENSE",
+  "options": {
+    "installClaudeCode": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install Claude Code with Anthropic's native installer during postCreate."
+    },
+    "claudeCodeVersion": {
+      "type": "string",
+      "proposals": ["2.1.233", "stable", "latest"],
+      "default": "2.1.233",
+      "description": "Claude Code version or release channel to install."
+    },
+    "installCodex": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install Codex CLI with OpenAI's standalone installer during postCreate."
+    },
+    "codexVersion": {
+      "type": "string",
+      "proposals": ["0.147.0", "latest"],
+      "default": "0.147.0",
+      "description": "Codex CLI release to install."
+    },
+    "codexApprovalPolicy": {
+      "type": "string",
+      "enum": ["default", "untrusted", "on-request", "never"],
+      "default": "default",
+      "description": "Optionally set Codex approval_policy in the user's config.toml."
+    },
+    "codexSandboxMode": {
+      "type": "string",
+      "enum": ["default", "read-only", "workspace-write", "danger-full-access"],
+      "default": "default",
+      "description": "Optionally set Codex sandbox_mode in the user's config.toml."
+    },
+    "installChromium": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install Debian's Chromium package at /usr/bin/chromium."
+    },
+    "vercelVersion": {
+      "type": "string",
+      "proposals": ["58.9.1", "none"],
+      "default": "58.9.1",
+      "description": "Vercel CLI version to install globally, or 'none' to skip."
+    }
+  },
+  "dependsOn": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24",
+      "pnpmVersion": "11.22.0"
+    },
+    "ghcr.io/devcontainers/features/python:1.8.0": {
+      "version": "3.12",
+      "installTools": true,
+      "toolsToInstall": "git+https://github.com/NVIDIA/SkillSpector.git@2bc641fd0639550a1cae9557491f483e30520afb"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "mounts": [
+    {
+      "source": "web-dev-codex-home-${devcontainerId}",
+      "target": "/home/vscode/.codex",
+      "type": "volume"
+    },
+    {
+      "source": "web-dev-claude-home-${devcontainerId}",
+      "target": "/home/vscode/.claude",
+      "type": "volume"
+    }
+  ],
+  "containerEnv": {
+    "CODEX_HOME": "/home/vscode/.codex",
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+  },
+  "postCreateCommand": "/usr/local/share/web-dev/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["anthropic.claude-code", "openai.chatgpt"]
+    }
+  }
+}

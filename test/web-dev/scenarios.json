@@ -1,0 +1,14 @@
+{
+  "minimal": {
+    "image": "mcr.microsoft.com/devcontainers/base:2.1.13-bookworm",
+    "features": {
+      "web-dev": {
+        "installClaudeCode": false,
+        "installCodex": false,
+        "installChromium": false,
+        "vercelVersion": "none"
+      }
+    },
+    "remoteUser": "vscode"
+  }
+}
