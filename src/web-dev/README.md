@@ -4,8 +4,8 @@ Installs the shared web development toolchain used by shnri projects.
 
 ```jsonc
 "features": {
-  "./shared-devcontainer-features/src/web-dev": {}
+  "ghcr.io/shnri/shared-devcontainer-features/web-dev:1": {}
 }
 ```
 
-See the [collection README](../../README.md) for included tools, options, persistence behavior, and submodule update instructions.
+See the [collection README](../../README.md) for included tools, options, persistence behavior, version selection, and release instructions.
