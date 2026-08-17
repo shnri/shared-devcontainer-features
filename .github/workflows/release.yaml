@@ -1,0 +1,29 @@
+name: Release Features
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    uses: ./.github/workflows/test.yaml
+
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Publish Features
+        uses: devcontainers/action@1082abd5d2bf3a11abccba70eef98df068277772 # v1.4.3
+        with:
+          publish-features: 'true'
+          base-path-to-features: './src'
+          devcontainer-cli-version: '0.88.0'
+          generate-docs: 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
