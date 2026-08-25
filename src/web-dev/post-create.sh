@@ -69,12 +69,11 @@ prepare_shared_marketplace_checkout() (
   fi
 
   temporary_checkout="$(mktemp -d "${marketplace_root}/.${shared_marketplace_name}.XXXXXX")"
-  cleanup_checkout() {
+  trap '
     if [[ -n "${temporary_checkout}" && -d "${temporary_checkout}" ]]; then
       rm -rf -- "${temporary_checkout}"
     fi
-  }
-  trap cleanup_checkout EXIT
+  ' EXIT
 
   echo "web-dev: fetching ${shared_marketplace_name} ${shared_marketplace_ref}..."
   git clone --quiet --depth 1 --branch "${shared_marketplace_ref}" \
