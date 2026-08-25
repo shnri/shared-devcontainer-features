@@ -7,25 +7,38 @@ readonly feature_dir="${WEB_DEV_FEATURE_DIR:-/usr/local/share/web-dev}"
 source "${feature_dir}/options.env"
 
 : "${install_claude_code:=true}"
-: "${claude_code_version:=2.1.233}"
 : "${install_codex:=true}"
-: "${codex_version:=0.147.0}"
+: "${install_shared_agent_plugins:=true}"
 : "${codex_approval_policy:=default}"
 : "${codex_sandbox_mode:=default}"
 
-validate_release() {
-  local name="$1"
-  local value="$2"
-  local channels="$3"
+readonly shared_marketplace_name="shared-agent-plugins"
+readonly shared_marketplace_repository="https://github.com/shnri/shared-agent-plugins.git"
+readonly shared_marketplace_ref="v0.20.0"
+readonly shared_marketplace_commit="4435d9a44fda41ebd52f976e7ef732778c70315b"
 
-  if [[ " ${channels} " == *" ${value} "* ]] ||
-    [[ "${value}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-    return
-  fi
+readonly -a codex_shared_plugins=(
+  "agent-instruction-maintenance"
+  "matt-pocock-engineering"
+  "vercel-react-best-practices"
+  "vercel-web-quality"
+  "e2e-test-governance"
+  "wio"
+)
 
-  echo "web-dev: invalid ${name}: ${value}" >&2
-  exit 1
-}
+readonly -a claude_shared_plugins=(
+  "vercel-react-best-practices"
+  "e2e-test-governance"
+  "wio"
+)
+
+readonly -a claude_compatibility_skills=(
+  "maintain-agent-instructions:plugins/agent-instruction-maintenance/skills/maintain-agent-instructions"
+  "diagnosing-bugs:plugins/matt-pocock-engineering/skills/diagnosing-bugs"
+  "improve-codebase-architecture:plugins/matt-pocock-engineering/skills/improve-codebase-architecture"
+  "codebase-design:plugins/matt-pocock-engineering/skills/codebase-design"
+  "vercel-web-quality-optimizer:plugins/vercel-web-quality/skills/vercel-web-quality-optimizer"
+)
 
 ensure_user_directory() {
   local path="$1"
@@ -39,6 +52,129 @@ ensure_user_directory() {
   else
     mkdir -p "${path}"
   fi
+}
+
+prepare_shared_marketplace_checkout() (
+  local marketplace_root="$1"
+  local checkout_path="${marketplace_root}/${shared_marketplace_name}"
+  local checkout_commit=""
+  local temporary_checkout=""
+
+  if [[ -d "${checkout_path}/.git" ]]; then
+    checkout_commit="$(git -C "${checkout_path}" rev-parse HEAD 2>/dev/null || true)"
+  fi
+
+  if [[ "${checkout_commit}" == "${shared_marketplace_commit}" ]]; then
+    return
+  fi
+
+  temporary_checkout="$(mktemp -d "${marketplace_root}/.${shared_marketplace_name}.XXXXXX")"
+  cleanup_checkout() {
+    if [[ -n "${temporary_checkout}" && -d "${temporary_checkout}" ]]; then
+      rm -rf -- "${temporary_checkout}"
+    fi
+  }
+  trap cleanup_checkout EXIT
+
+  echo "web-dev: fetching ${shared_marketplace_name} ${shared_marketplace_ref}..."
+  git clone --quiet --depth 1 --branch "${shared_marketplace_ref}" \
+    "${shared_marketplace_repository}" "${temporary_checkout}"
+
+  checkout_commit="$(git -C "${temporary_checkout}" rev-parse HEAD)"
+  if [[ "${checkout_commit}" != "${shared_marketplace_commit}" ]]; then
+    echo "web-dev: ${shared_marketplace_ref} resolved to unexpected commit ${checkout_commit}." >&2
+    exit 1
+  fi
+
+  rm -rf -- "${checkout_path}"
+  mv "${temporary_checkout}" "${checkout_path}"
+  temporary_checkout=""
+)
+
+configure_claude_shared_plugins() {
+  local seed_dir="$1"
+  local marketplace_root="${seed_dir}/marketplaces"
+  local checkout_path="${marketplace_root}/${shared_marketplace_name}"
+  local plugin=""
+  local skill=""
+  local skill_name=""
+  local skill_source=""
+  local skill_link=""
+
+  ensure_user_directory "${marketplace_root}"
+  prepare_shared_marketplace_checkout "${marketplace_root}"
+
+  # Seed metadata is rebuilt from the pinned checkout so repeated postCreate runs
+  # cannot keep stale plugin cache entries from an older Feature release.
+  rm -rf -- "${seed_dir}/cache"
+  rm -f -- "${seed_dir}/known_marketplaces.json" "${seed_dir}/installed_plugins.json"
+
+  (
+    local isolated_home=""
+    isolated_home="$(mktemp -d)"
+    trap 'rm -rf -- "${isolated_home}"' EXIT
+
+    env -u CLAUDE_CODE_PLUGIN_SEED_DIR \
+      HOME="${isolated_home}" \
+      CLAUDE_CONFIG_DIR="${isolated_home}/.claude" \
+      CLAUDE_CODE_PLUGIN_CACHE_DIR="${seed_dir}" \
+      claude plugin marketplace add "${checkout_path}"
+
+    for plugin in "${claude_shared_plugins[@]}"; do
+      env -u CLAUDE_CODE_PLUGIN_SEED_DIR \
+        HOME="${isolated_home}" \
+        CLAUDE_CONFIG_DIR="${isolated_home}/.claude" \
+        CLAUDE_CODE_PLUGIN_CACHE_DIR="${seed_dir}" \
+        claude plugin install --yes "${plugin}@${shared_marketplace_name}"
+    done
+  )
+
+  ensure_user_directory "${claude_home}/skills"
+  for skill in "${claude_compatibility_skills[@]}"; do
+    skill_name="${skill%%:*}"
+    skill_source="${checkout_path}/${skill#*:}"
+    skill_link="${claude_home}/skills/${skill_name}"
+
+    if [[ -e "${skill_link}" && ! -L "${skill_link}" ]]; then
+      echo "web-dev: keeping existing Claude skill at ${skill_link}." >&2
+      continue
+    fi
+
+    ln -sfn "${skill_source}" "${skill_link}"
+  done
+}
+
+configure_codex_shared_plugins() {
+  local checkout_commit=""
+  local marketplace_root=""
+  local plugin=""
+
+  codex plugin marketplace add shnri/shared-agent-plugins --ref "${shared_marketplace_ref}"
+  marketplace_root="$(
+    codex plugin marketplace list --json |
+      node -e '
+        let input = "";
+        process.stdin.setEncoding("utf8");
+        process.stdin.on("data", (chunk) => { input += chunk; });
+        process.stdin.on("end", () => {
+          const marketplace = JSON.parse(input).marketplaces.find(
+            ({ name }) => name === "shared-agent-plugins",
+          );
+          if (!marketplace) process.exit(1);
+          process.stdout.write(marketplace.root);
+        });
+      '
+  )"
+  checkout_commit="$(git -C "${marketplace_root}" rev-parse HEAD)"
+  if [[ "${checkout_commit}" != "${shared_marketplace_commit}" ]]; then
+    echo "web-dev: Codex marketplace resolved to unexpected commit ${checkout_commit}." >&2
+    echo "web-dev: remove the existing ${shared_marketplace_name} registration before rebuilding." >&2
+    exit 1
+  fi
+
+  for plugin in "${codex_shared_plugins[@]}"; do
+    codex plugin add "${plugin}@${shared_marketplace_name}"
+  done
 }
 
 set_codex_root_string() {
@@ -82,18 +218,38 @@ fi
 
 export PATH="${HOME}/.local/bin:${PATH}"
 
-if [[ "${install_claude_code}" == "true" ]] && ! command -v claude >/dev/null 2>&1; then
-  validate_release "claudeCodeVersion" "${claude_code_version}" "stable latest"
-  echo "web-dev: installing Claude Code ${claude_code_version}..."
+if [[ "${install_claude_code}" == "true" ]]; then
+  echo "web-dev: installing the latest Claude Code..."
   curl --retry 3 --connect-timeout 20 -fsSL https://claude.ai/install.sh |
-    bash -s -- "${claude_code_version}"
+    bash -s -- latest
 fi
 
-if [[ "${install_codex}" == "true" ]] && ! command -v codex >/dev/null 2>&1; then
-  validate_release "codexVersion" "${codex_version}" "latest"
-  echo "web-dev: installing Codex ${codex_version}..."
+if [[ "${install_codex}" == "true" ]]; then
+  echo "web-dev: installing the latest Codex..."
   curl --retry 3 --connect-timeout 20 -fsSL https://chatgpt.com/codex/install.sh |
-    CODEX_RELEASE="${codex_version}" CODEX_NON_INTERACTIVE=true sh
+    CODEX_RELEASE=latest CODEX_NON_INTERACTIVE=true sh
+fi
+
+if [[ "${install_shared_agent_plugins}" == "true" ]]; then
+  if [[ "${install_claude_code}" == "true" ]]; then
+    if ! command -v claude >/dev/null 2>&1; then
+      echo "web-dev: Claude Code is required to build the shared plugin seed." >&2
+      exit 1
+    fi
+
+    claude_seed_dir="${CLAUDE_CODE_PLUGIN_SEED_DIR:-/opt/claude-plugin-seed}"
+    ensure_user_directory "${claude_seed_dir}"
+    configure_claude_shared_plugins "${claude_seed_dir}"
+  fi
+
+  if [[ "${install_codex}" == "true" ]]; then
+    if ! command -v codex >/dev/null 2>&1; then
+      echo "web-dev: Codex is required to install the shared plugins." >&2
+      exit 1
+    fi
+
+    configure_codex_shared_plugins
+  fi
 fi
 
 # Remove the legacy alias used before Codex had persisted permission settings.

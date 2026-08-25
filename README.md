@@ -4,19 +4,19 @@ Web projectで共通利用するDev Container Featuresです。Node.js、Python�
 
 ## 利用方法
 
-consumerの`.devcontainer/devcontainer.json`からOCI Featureを参照します。互換性のある1.xの更新を受け取る場合はmajor versionを指定します。
+consumerの`.devcontainer/devcontainer.json`からOCI Featureを参照します。CLIを常に最新版へ更新する2.xを利用する場合はmajor versionを指定します。
 
 ```jsonc
 {
   "name": "my-web-project",
   "image": "mcr.microsoft.com/devcontainers/base:2.1.13-bookworm",
   "features": {
-    "ghcr.io/shnri/shared-devcontainer-features/web-dev:1": {},
+    "ghcr.io/shnri/shared-devcontainer-features/web-dev:2": {},
   },
 }
 ```
 
-Featureを完全に同じreleaseへ固定する場合は`:1.0.0`、minor更新だけ受け取る場合は`:1.0`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
+Featureを完全に同じreleaseへ固定する場合は`:2.0.0`、minor更新だけ受け取る場合は`:2.0`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
 
 このFeatureはDebian Bookworm系のDev Container imageと、標準の`vscode` user（homeは`/home/vscode`）を対象にしています。
 
@@ -26,29 +26,31 @@ Featureを完全に同じreleaseへ固定する場合は`:1.0.0`、minor更新�
 - Python 3.12、SkillSpector 2.8.2相当（commit固定）
 - GitHub CLI
 - Chromium、Vercel CLI 58.9.1
-- Claude Code 2.1.233、Codex 0.147.0
+- post-createごとに最新版へ更新するClaude CodeとCodex
 - Claude Code/CodexのVS Code extension
 - Claude/Codexの認証・設定を保持するproject別named volume
+- [`shnri/shared-agent-plugins`](https://github.com/shnri/shared-agent-plugins) `v0.20.0`の共通Marketplace、Plugin、Skill
 
-Claude CodeとCodexはremote user所有にするため、container作成後に公式standalone installerで導入します。versionを更新する場合はFeature optionを変更するか、このrepositoryで既定値とFeature versionを更新して新しいreleaseをpublishしてください。
+Claude CodeとCodexはremote user所有にするため、container作成後に公式standalone installerで導入します。Featureを再実行した場合も既存CLIをスキップせず、最新版へ更新します。
+
+共通Agent Pluginは両クライアントのネイティブな仕組みへ展開します。Claude Codeでは`/opt/claude-plugin-seed`を`CLAUDE_CODE_PLUGIN_SEED_DIR`として読み込み、Claude Plugin化されていない互換Skillだけを`~/.claude/skills`から固定checkoutへリンクします。Codexではユーザーの`CODEX_HOME`へMarketplaceとPluginをidempotentに登録します。どちらも新しいセッションから利用できます。
 
 ## Options
 
-| option                | default   | 説明                                                 |
-| --------------------- | --------- | ---------------------------------------------------- |
-| `installClaudeCode`   | `true`    | Claude Codeを導入する                                |
-| `claudeCodeVersion`   | `2.1.233` | `stable`、`latest`、またはversion                    |
-| `installCodex`        | `true`    | Codex CLIを導入する                                  |
-| `codexVersion`        | `0.147.0` | `latest`、またはversion                              |
-| `codexApprovalPolicy` | `default` | Codex user設定を変更しないか、承認policyを明示する   |
-| `codexSandboxMode`    | `default` | Codex user設定を変更しないか、sandbox modeを明示する |
-| `installChromium`     | `true`    | `/usr/bin/chromium`を導入する                        |
-| `vercelVersion`       | `58.9.1`  | Vercel CLI version。`none`で導入しない               |
+| option                      | default   | 説明                                                 |
+| --------------------------- | --------- | ---------------------------------------------------- |
+| `installClaudeCode`         | `true`    | Claude Codeを導入する                                |
+| `installCodex`              | `true`    | Codex CLIを導入する                                  |
+| `installSharedAgentPlugins` | `true`    | Claude/Codexへ固定済み共通PluginとSkillを導入する    |
+| `codexApprovalPolicy`       | `default` | Codex user設定を変更しないか、承認policyを明示する   |
+| `codexSandboxMode`          | `default` | Codex user設定を変更しないか、sandbox modeを明示する |
+| `installChromium`           | `true`    | `/usr/bin/chromium`を導入する                        |
+| `vercelVersion`             | `58.9.1`  | Vercel CLI version。`none`で導入しない               |
 
 `codexApprovalPolicy`と`codexSandboxMode`の既定値は`default`です。Featureはconsumerの安全設定を暗黙に弱めません。Dev Container自体を外側の隔離境界として扱うprojectだけが、例えば次のように明示します。
 
 ```jsonc
-"ghcr.io/shnri/shared-devcontainer-features/web-dev:1": {
+"ghcr.io/shnri/shared-devcontainer-features/web-dev:2": {
   "codexApprovalPolicy": "never",
   "codexSandboxMode": "danger-full-access"
 }
@@ -73,6 +75,10 @@ Featureの既定volume sourceには`${devcontainerId}`が含まれ、projectご�
 - `workspaceFolder`、`workspaceMount`
 - project固有のportと環境変数
 - dependency installやsubmodule初期化などproject固有のlifecycle command
+- project固有の`.codex/config.toml`、`.agents/skills`、`AGENTS.md`
+- project固有の`.claude/settings.json`、`.claude/skills`、`.mcp.json`
+
+Codexはprojectの`.codex/config.toml`を信頼済みrepositoryで直接読み込みます。これを`~/.codex/config.toml`へコピーすると、ユーザー共通のMarketplaceやPlugin登録を失うため、consumer側で同期処理を追加しないでください。Claude Codeでも共通Plugin Seedとproject固有の`enabledPlugins`／`extraKnownMarketplaces`は併用できます。
 
 ## Release
 
@@ -81,9 +87,9 @@ Featureごとのversionは`src/<feature>/devcontainer-feature.json`の`version`�
 1. GitHubのActionsから`Release Features` workflowを`main`に対して手動実行する。
 2. workflow内の再検証とGHCR publishが成功したことを確認する。
 3. 初回releaseではGitHub Packagesの`shared-devcontainer-features/web-dev`を`Public`へ変更する。repository自体はprivateのままでも構わない。
-4. `ghcr.io/shnri/shared-devcontainer-features/web-dev:1`が認証なしでpullできることを確認する。
+4. `ghcr.io/shnri/shared-devcontainer-features/web-dev:2`が認証なしでpullできることを確認する。
 
-publish時に`1.0.0`、`1.0`、`1`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
+publish時に`2.0.0`、`2.0`、`2`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
 
 ## このrepositoryを開発する
 

@@ -15,5 +15,6 @@ check "Vercel skipped" bash -c '! command -v vercel'
 check "Claude Code skipped" bash -c '! command -v claude'
 check "Codex skipped" bash -c '! command -v codex'
 check "Codex config initialized" bash -c 'grep -Fq "cli_auth_credentials_store = \"file\"" "${CODEX_HOME}/config.toml"'
+check "Shared plugins skipped without agent CLIs" bash -c 'test ! -e "${CLAUDE_CODE_PLUGIN_SEED_DIR}/installed_plugins.json"'
 
 reportResults

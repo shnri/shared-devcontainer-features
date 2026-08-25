@@ -1,6 +1,6 @@
 {
   "id": "web-dev",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "name": "Shared Web Development",
   "description": "Installs the shared Node.js, Python, browser, cloud, and AI-assisted development toolchain used by shnri web projects.",
   "documentationURL": "https://github.com/shnri/shared-devcontainer-features/tree/main/src/web-dev",
@@ -11,22 +11,15 @@
       "default": true,
       "description": "Install Claude Code with Anthropic's native installer during postCreate."
     },
-    "claudeCodeVersion": {
-      "type": "string",
-      "proposals": ["2.1.233", "stable", "latest"],
-      "default": "2.1.233",
-      "description": "Claude Code version or release channel to install."
-    },
     "installCodex": {
       "type": "boolean",
       "default": true,
       "description": "Install Codex CLI with OpenAI's standalone installer during postCreate."
     },
-    "codexVersion": {
-      "type": "string",
-      "proposals": ["0.147.0", "latest"],
-      "default": "0.147.0",
-      "description": "Codex CLI release to install."
+    "installSharedAgentPlugins": {
+      "type": "boolean",
+      "default": true,
+      "description": "Install the pinned shared-agent-plugins baseline for both Claude Code and Codex."
     },
     "codexApprovalPolicy": {
       "type": "string",
@@ -78,7 +71,8 @@
   ],
   "containerEnv": {
     "CODEX_HOME": "/home/vscode/.codex",
-    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+    "CLAUDE_CODE_PLUGIN_SEED_DIR": "/opt/claude-plugin-seed"
   },
   "postCreateCommand": "/usr/local/share/web-dev/post-create.sh",
   "customizations": {

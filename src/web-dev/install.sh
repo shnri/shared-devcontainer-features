@@ -44,9 +44,8 @@ install -m 0755 "${source_dir}/post-create.sh" "${feature_dir}/post-create.sh"
 
 {
   printf 'install_claude_code=%q\n' "${INSTALLCLAUDECODE:-true}"
-  printf 'claude_code_version=%q\n' "${CLAUDECODEVERSION:-2.1.233}"
   printf 'install_codex=%q\n' "${INSTALLCODEX:-true}"
-  printf 'codex_version=%q\n' "${CODEXVERSION:-0.147.0}"
+  printf 'install_shared_agent_plugins=%q\n' "${INSTALLSHAREDAGENTPLUGINS:-true}"
   printf 'codex_approval_policy=%q\n' "${CODEXAPPROVALPOLICY:-default}"
   printf 'codex_sandbox_mode=%q\n' "${CODEXSANDBOXMODE:-default}"
 } > "${feature_dir}/options.env"
