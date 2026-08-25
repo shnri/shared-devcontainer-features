@@ -33,7 +33,7 @@ Featureを完全に同じreleaseへ固定する場合は`:2.0.0`、minor更新�
 
 Claude CodeとCodexはremote user所有にするため、container作成後に公式standalone installerで導入します。Featureを再実行した場合も既存CLIをスキップせず、最新版へ更新します。
 
-共通Agent Pluginは両クライアントのネイティブな仕組みへ展開します。Claude Codeでは`/opt/claude-plugin-seed`を`CLAUDE_CODE_PLUGIN_SEED_DIR`として読み込み、Claude Plugin化されていない互換Skillだけを`~/.claude/skills`から固定checkoutへリンクします。Codexではユーザーの`CODEX_HOME`へMarketplaceとPluginをidempotentに登録します。どちらも新しいセッションから利用できます。
+共通Agent Pluginはpublic Marketplaceから固定commitを取得し、両クライアントのネイティブな仕組みへ展開します。Claude Codeでは`/opt/claude-plugin-seed`を`CLAUDE_CODE_PLUGIN_SEED_DIR`として読み込み、Claude Plugin化されていない互換Skillだけを`~/.claude/skills`から固定checkoutへリンクします。Codexではユーザーの`CODEX_HOME`へMarketplaceとPluginをidempotentに登録します。どちらも新しいセッションから利用できます。
 
 ## Options
 
