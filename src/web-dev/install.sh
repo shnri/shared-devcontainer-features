@@ -70,6 +70,8 @@ fi
 
 install -d -m 0755 "${feature_dir}"
 install -m 0755 "${source_dir}/post-create.sh" "${feature_dir}/post-create.sh"
+install -m 0755 "${source_dir}/docker-storage.sh" \
+  /usr/local/bin/devcontainer-docker-storage
 install -m 0644 \
   "${source_dir}/global-instructions.sh" \
   "${feature_dir}/global-instructions.sh"
@@ -81,6 +83,7 @@ install -m 0644 \
   printf 'install_shared_global_instructions=%q\n' "${INSTALLSHAREDGLOBALINSTRUCTIONS:-true}"
   printf 'codex_approval_policy=%q\n' "${CODEXAPPROVALPOLICY:-default}"
   printf 'codex_sandbox_mode=%q\n' "${CODEXSANDBOXMODE:-default}"
+  printf 'run_docker_storage_gc_on_create=%q\n' "${RUNDOCKERSTORAGEGCONCREATE:-false}"
 } > "${feature_dir}/options.env"
 
 chmod 0644 "${feature_dir}/options.env"

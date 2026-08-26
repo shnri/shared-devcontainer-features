@@ -1,6 +1,6 @@
 {
   "id": "web-dev",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "name": "Shared Web Development",
   "description": "Installs the shared Node.js, Python, browser, cloud, and AI-assisted development toolchain used by shnri web projects.",
   "documentationURL": "https://github.com/shnri/shared-devcontainer-features/tree/main/src/web-dev",
@@ -37,6 +37,11 @@
       "enum": ["default", "read-only", "workspace-write", "danger-full-access"],
       "default": "default",
       "description": "Optionally set Codex sandbox_mode in the user's config.toml."
+    },
+    "runDockerStorageGcOnCreate": {
+      "type": "boolean",
+      "default": false,
+      "description": "Opt in to safe, label-scoped Docker GC after postCreate when this container can reach a dedicated development Docker daemon."
     },
     "installChromium": {
       "type": "boolean",

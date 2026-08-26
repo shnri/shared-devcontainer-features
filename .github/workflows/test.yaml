@@ -24,13 +24,16 @@ jobs:
           sudo apt-get install --yes shellcheck
 
       - name: Validate shell scripts
-        run: shellcheck src/**/*.sh test/**/*.sh tests/*.sh
+        run: find src test tests -name '*.sh' -print0 | xargs -0 shellcheck
 
       - name: Test global instructions installer
         run: bash tests/global-instructions.sh
 
       - name: Test user cache ownership
         run: bash tests/cache-ownership.sh
+
+      - name: Test Docker storage CLI
+        run: bash tests/docker-storage.sh
 
       - name: Package Features
         run: devcontainer features package ./src --output-folder ./output

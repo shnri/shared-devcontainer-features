@@ -14,6 +14,7 @@ source "${feature_dir}/global-instructions.sh"
 : "${install_shared_global_instructions:=true}"
 : "${codex_approval_policy:=default}"
 : "${codex_sandbox_mode:=default}"
+: "${run_docker_storage_gc_on_create:=false}"
 
 readonly shared_marketplace_name="shared-agent-plugins"
 readonly shared_marketplace_repository="https://github.com/shnri/shared-agent-plugins.git"
@@ -301,4 +302,14 @@ if [[ -f "${HOME}/.bashrc" ]]; then
   sed -i \
     "/^[[:space:]]*alias codex='codex --dangerously-bypass-approvals-and-sandbox'[[:space:]]*$/d" \
     "${HOME}/.bashrc"
+fi
+
+# 専用DinDを持つconsumerだけが明示的に有効化する。host daemonを共有するconsumerへ
+# BuildKit保持量を暗黙に強制しない。
+if [[ "${run_docker_storage_gc_on_create}" == "true" ]]; then
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    devcontainer-docker-storage gc
+  else
+    echo 'web-dev: Docker daemon is unavailable; skipped safe Docker storage GC.' >&2
+  fi
 fi
