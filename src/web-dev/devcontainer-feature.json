@@ -1,6 +1,6 @@
 {
   "id": "web-dev",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "name": "Shared Web Development",
   "description": "Installs the shared Node.js, Python, browser, cloud, and AI-assisted development toolchain used by shnri web projects.",
   "documentationURL": "https://github.com/shnri/shared-devcontainer-features/tree/main/src/web-dev",

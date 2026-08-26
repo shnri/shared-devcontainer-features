@@ -29,6 +29,9 @@ jobs:
       - name: Test global instructions installer
         run: bash tests/global-instructions.sh
 
+      - name: Test user cache ownership
+        run: bash tests/cache-ownership.sh
+
       - name: Package Features
         run: devcontainer features package ./src --output-folder ./output
 

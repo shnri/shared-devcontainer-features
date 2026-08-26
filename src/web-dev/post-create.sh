@@ -59,6 +59,28 @@ ensure_user_directory() {
   fi
 }
 
+ensure_user_owned_directory() {
+  local path="$1"
+  local user_id=""
+  local group_id=""
+
+  user_id="$(id -u)"
+  group_id="$(id -g)"
+
+  if [[ "${user_id}" -eq 0 ]]; then
+    install -d -m 0755 -o "${user_id}" -g "${group_id}" "${path}"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo install -d -m 0755 -o "${user_id}" -g "${group_id}" "${path}"
+  else
+    mkdir -p "${path}"
+  fi
+
+  if [[ ! -w "${path}" ]]; then
+    echo "web-dev: ${path} is not writable by the remote user." >&2
+    exit 1
+  fi
+}
+
 prepare_shared_marketplace_checkout() (
   local marketplace_root="$1"
   local checkout_path="${marketplace_root}/${shared_marketplace_name}"
@@ -225,6 +247,10 @@ fi
 export PATH="${HOME}/.local/bin:${PATH}"
 
 if [[ "${install_claude_code}" == "true" ]]; then
+  claude_cache_home="${XDG_CACHE_HOME:-${HOME}/.cache}"
+  ensure_user_owned_directory "${claude_cache_home}"
+  ensure_user_owned_directory "${claude_cache_home}/claude"
+
   echo "web-dev: installing the latest Claude Code..."
   curl --retry 3 --connect-timeout 20 -fsSL https://claude.ai/install.sh |
     bash -s -- latest

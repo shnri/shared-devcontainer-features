@@ -16,7 +16,7 @@ consumerの`.devcontainer/devcontainer.json`からOCI Featureを参照します�
 }
 ```
 
-Featureを完全に同じreleaseへ固定する場合は`:2.1.0`、minor更新だけ受け取る場合は`:2.1`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
+Featureを完全に同じreleaseへ固定する場合は`:2.1.1`、minor更新だけ受け取る場合は`:2.1`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
 
 このFeatureはDebian Bookworm系のDev Container imageと、標準の`vscode` user（homeは`/home/vscode`）を対象にしています。
 
@@ -90,7 +90,7 @@ Featureごとのversionは`src/<feature>/devcontainer-feature.json`の`version`�
 3. 初回releaseではGitHub Packagesの`shared-devcontainer-features/web-dev`を`Public`へ変更する。repository自体はprivateのままでも構わない。
 4. `ghcr.io/shnri/shared-devcontainer-features/web-dev:2`が認証なしでpullできることを確認する。
 
-publish時に`2.1.0`、`2.1`、`2`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
+publish時に`2.1.1`、`2.1`、`2`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
 
 ## このrepositoryを開発する
 

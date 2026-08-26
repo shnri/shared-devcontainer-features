@@ -7,6 +7,35 @@ readonly source_dir
 
 install_chromium="${INSTALLCHROMIUM:-true}"
 vercel_version="${VERCELVERSION:-58.9.1}"
+remote_user="${_REMOTE_USER:-${_CONTAINER_USER:-${USER:-}}}"
+remote_home="${_REMOTE_USER_HOME:-${_CONTAINER_USER_HOME:-}}"
+
+if [[ -z "${remote_user}" ]]; then
+  remote_user="$(id -un)"
+fi
+
+if ! id "${remote_user}" >/dev/null 2>&1; then
+  echo "web-dev: remote user does not exist: ${remote_user}" >&2
+  exit 1
+fi
+
+if [[ -z "${remote_home}" ]]; then
+  remote_home="$(getent passwd "${remote_user}" | cut -d: -f6)"
+fi
+
+if [[ -z "${remote_home}" || "${remote_home}" != /* ]]; then
+  echo "web-dev: could not resolve an absolute home for ${remote_user}." >&2
+  exit 1
+fi
+
+remote_group="$(id -gn "${remote_user}")"
+readonly remote_user remote_home remote_group
+
+# Featureのbuild処理がremote userのHOME配下をroot所有で残さないよう、
+# user-local installerが使うcacheを先に正しい所有権で用意する。
+install -d -m 0755 -o "${remote_user}" -g "${remote_group}" \
+  "${remote_home}/.cache" \
+  "${remote_home}/.cache/claude"
 
 if [[ "${install_chromium}" == "true" ]]; then
   if ! command -v apt-get >/dev/null 2>&1; then

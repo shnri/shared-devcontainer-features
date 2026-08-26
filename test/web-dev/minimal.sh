@@ -6,7 +6,7 @@ set -euo pipefail
 source dev-container-features-test-lib
 
 check "Node.js 24" bash -c 'node --version | grep -E "^v24\."'
-check "pnpm 11.22.0" bash -c 'test "$(pnpm --version)" = "11.22.0"'
+check "pnpm 11.22.0" bash -c 'cd /tmp && test "$(pnpm --version)" = "11.22.0"'
 check "Python 3.12" bash -c 'python --version | grep -E "^Python 3\.12\."'
 check "SkillSpector" skillspector --version
 check "GitHub CLI" gh --version
