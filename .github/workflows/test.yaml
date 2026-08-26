@@ -24,7 +24,10 @@ jobs:
           sudo apt-get install --yes shellcheck
 
       - name: Validate shell scripts
-        run: shellcheck src/**/*.sh test/**/*.sh
+        run: shellcheck src/**/*.sh test/**/*.sh tests/*.sh
+
+      - name: Test global instructions installer
+        run: bash tests/global-instructions.sh
 
       - name: Package Features
         run: devcontainer features package ./src --output-folder ./output

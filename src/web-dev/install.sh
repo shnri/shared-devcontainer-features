@@ -41,11 +41,15 @@ fi
 
 install -d -m 0755 "${feature_dir}"
 install -m 0755 "${source_dir}/post-create.sh" "${feature_dir}/post-create.sh"
+install -m 0644 \
+  "${source_dir}/global-instructions.sh" \
+  "${feature_dir}/global-instructions.sh"
 
 {
   printf 'install_claude_code=%q\n' "${INSTALLCLAUDECODE:-true}"
   printf 'install_codex=%q\n' "${INSTALLCODEX:-true}"
   printf 'install_shared_agent_plugins=%q\n' "${INSTALLSHAREDAGENTPLUGINS:-true}"
+  printf 'install_shared_global_instructions=%q\n' "${INSTALLSHAREDGLOBALINSTRUCTIONS:-true}"
   printf 'codex_approval_policy=%q\n' "${CODEXAPPROVALPOLICY:-default}"
   printf 'codex_sandbox_mode=%q\n' "${CODEXSANDBOXMODE:-default}"
 } > "${feature_dir}/options.env"

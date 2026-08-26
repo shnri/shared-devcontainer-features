@@ -5,17 +5,20 @@ readonly feature_dir="${WEB_DEV_FEATURE_DIR:-/usr/local/share/web-dev}"
 
 # shellcheck source=/dev/null
 source "${feature_dir}/options.env"
+# shellcheck source=/dev/null
+source "${feature_dir}/global-instructions.sh"
 
 : "${install_claude_code:=true}"
 : "${install_codex:=true}"
 : "${install_shared_agent_plugins:=true}"
+: "${install_shared_global_instructions:=true}"
 : "${codex_approval_policy:=default}"
 : "${codex_sandbox_mode:=default}"
 
 readonly shared_marketplace_name="shared-agent-plugins"
 readonly shared_marketplace_repository="https://github.com/shnri/shared-agent-plugins.git"
-readonly shared_marketplace_ref="v0.20.0"
-readonly shared_marketplace_commit="4435d9a44fda41ebd52f976e7ef732778c70315b"
+readonly shared_marketplace_ref="v0.21.0"
+readonly shared_marketplace_commit="d8aff47059b786db2ea4f7d1a6c9729dc8421e17"
 
 readonly -a codex_shared_plugins=(
   "agent-instruction-maintenance"
@@ -39,6 +42,8 @@ readonly -a claude_compatibility_skills=(
   "codebase-design:plugins/matt-pocock-engineering/skills/codebase-design"
   "vercel-web-quality-optimizer:plugins/vercel-web-quality/skills/vercel-web-quality-optimizer"
 )
+
+shared_checkout_path=""
 
 ensure_user_directory() {
   local path="$1"
@@ -102,6 +107,7 @@ configure_claude_shared_plugins() {
 
   ensure_user_directory "${marketplace_root}"
   prepare_shared_marketplace_checkout "${marketplace_root}"
+  shared_checkout_path="${checkout_path}"
 
   # Seed metadata is rebuilt from the pinned checkout so repeated postCreate runs
   # cannot keep stale plugin cache entries from an older Feature release.
@@ -170,6 +176,7 @@ configure_codex_shared_plugins() {
     echo "web-dev: remove the existing ${shared_marketplace_name} registration before rebuilding." >&2
     exit 1
   fi
+  shared_checkout_path="${marketplace_root}"
 
   for plugin in "${codex_shared_plugins[@]}"; do
     codex plugin add "${plugin}@${shared_marketplace_name}"
@@ -248,6 +255,18 @@ if [[ "${install_shared_agent_plugins}" == "true" ]]; then
     fi
 
     configure_codex_shared_plugins
+  fi
+
+  if [[ "${install_shared_global_instructions}" == "true" &&
+    -n "${shared_checkout_path}" ]]; then
+    install_shared_global_instructions \
+      "${shared_checkout_path}" \
+      "${shared_marketplace_ref}" \
+      "${shared_marketplace_commit}" \
+      "${codex_home}" \
+      "${claude_home}" \
+      "${install_codex}" \
+      "${install_claude_code}"
   fi
 fi
 

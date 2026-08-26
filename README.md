@@ -16,7 +16,7 @@ consumerの`.devcontainer/devcontainer.json`からOCI Featureを参照します�
 }
 ```
 
-Featureを完全に同じreleaseへ固定する場合は`:2.0.0`、minor更新だけ受け取る場合は`:2.0`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
+Featureを完全に同じreleaseへ固定する場合は`:2.1.0`、minor更新だけ受け取る場合は`:2.1`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
 
 このFeatureはDebian Bookworm系のDev Container imageと、標準の`vscode` user（homeは`/home/vscode`）を対象にしています。
 
@@ -29,11 +29,11 @@ Featureを完全に同じreleaseへ固定する場合は`:2.0.0`、minor更新�
 - post-createごとに最新版へ更新するClaude CodeとCodex
 - Claude Code/CodexのVS Code extension
 - Claude/Codexの認証・設定を保持するproject別named volume
-- [`shnri/shared-agent-plugins`](https://github.com/shnri/shared-agent-plugins) `v0.20.0`の共通Marketplace、Plugin、Skill
+- [`shnri/shared-agent-plugins`](https://github.com/shnri/shared-agent-plugins) `v0.21.0`の共通Marketplace、Plugin、Skill、global instructions
 
 Claude CodeとCodexはremote user所有にするため、container作成後に公式standalone installerで導入します。Featureを再実行した場合も既存CLIをスキップせず、最新版へ更新します。
 
-共通Agent Pluginはpublic Marketplaceから固定commitを取得し、両クライアントのネイティブな仕組みへ展開します。Claude Codeでは`/opt/claude-plugin-seed`を`CLAUDE_CODE_PLUGIN_SEED_DIR`として読み込み、Claude Plugin化されていない互換Skillだけを`~/.claude/skills`から固定checkoutへリンクします。Codexではユーザーの`CODEX_HOME`へMarketplaceとPluginをidempotentに登録します。どちらも新しいセッションから利用できます。
+共通Agent Pluginはpublic Marketplaceから固定commitを取得し、両クライアントのネイティブな仕組みへ展開します。Claude Codeでは`/opt/claude-plugin-seed`を`CLAUDE_CODE_PLUGIN_SEED_DIR`として読み込み、Claude Plugin化されていない互換Skillだけを`~/.claude/skills`から固定checkoutへリンクします。Codexではユーザーの`CODEX_HOME`へMarketplaceとPluginをidempotentに登録します。固定releaseにglobal instructionsが含まれる場合、Codexは`~/.codex/AGENTS.md`のmanaged block、Claude Codeは`~/.claude/rules/shared-agent-plugins/`から読み込みます。`~/.claude/CLAUDE.md`と所有外のrulesは変更しません。どちらも新しいセッションから利用できます。
 
 ## Options
 
@@ -42,6 +42,7 @@ Claude CodeとCodexはremote user所有にするため、container作成後に�
 | `installClaudeCode`         | `true`    | Claude Codeを導入する                                |
 | `installCodex`              | `true`    | Codex CLIを導入する                                  |
 | `installSharedAgentPlugins` | `true`    | Claude/Codexへ固定済み共通PluginとSkillを導入する    |
+| `installSharedGlobalInstructions` | `true` | 共通Plugin導入時に、固定済みのユーザー共通指示を両clientへ導入する |
 | `codexApprovalPolicy`       | `default` | Codex user設定を変更しないか、承認policyを明示する   |
 | `codexSandboxMode`          | `default` | Codex user設定を変更しないか、sandbox modeを明示する |
 | `installChromium`           | `true`    | `/usr/bin/chromium`を導入する                        |
@@ -89,7 +90,7 @@ Featureごとのversionは`src/<feature>/devcontainer-feature.json`の`version`�
 3. 初回releaseではGitHub Packagesの`shared-devcontainer-features/web-dev`を`Public`へ変更する。repository自体はprivateのままでも構わない。
 4. `ghcr.io/shnri/shared-devcontainer-features/web-dev:2`が認証なしでpullできることを確認する。
 
-publish時に`2.0.0`、`2.0`、`2`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
+publish時に`2.1.0`、`2.1`、`2`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
 
 ## このrepositoryを開発する
 
