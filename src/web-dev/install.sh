@@ -75,12 +75,16 @@ install -m 0755 "${source_dir}/docker-storage.sh" \
 install -m 0644 \
   "${source_dir}/global-instructions.sh" \
   "${feature_dir}/global-instructions.sh"
+install -m 0644 \
+  "${source_dir}/matt-pocock-skills.sh" \
+  "${feature_dir}/matt-pocock-skills.sh"
 
 {
   printf 'install_claude_code=%q\n' "${INSTALLCLAUDECODE:-true}"
   printf 'install_codex=%q\n' "${INSTALLCODEX:-true}"
   printf 'install_shared_agent_plugins=%q\n' "${INSTALLSHAREDAGENTPLUGINS:-true}"
   printf 'install_shared_global_instructions=%q\n' "${INSTALLSHAREDGLOBALINSTRUCTIONS:-true}"
+  printf 'install_matt_pocock_skills=%q\n' "${INSTALLMATTPOCOCKSKILLS:-true}"
   printf 'codex_approval_policy=%q\n' "${CODEXAPPROVALPOLICY:-default}"
   printf 'codex_sandbox_mode=%q\n' "${CODEXSANDBOXMODE:-default}"
   printf 'run_docker_storage_gc_on_create=%q\n' "${RUNDOCKERSTORAGEGCONCREATE:-false}"

@@ -7,27 +7,33 @@ readonly feature_dir="${WEB_DEV_FEATURE_DIR:-/usr/local/share/web-dev}"
 source "${feature_dir}/options.env"
 # shellcheck source=/dev/null
 source "${feature_dir}/global-instructions.sh"
+# shellcheck source=/dev/null
+source "${feature_dir}/matt-pocock-skills.sh"
 
 : "${install_claude_code:=true}"
 : "${install_codex:=true}"
 : "${install_shared_agent_plugins:=true}"
 : "${install_shared_global_instructions:=true}"
+: "${install_matt_pocock_skills:=true}"
 : "${codex_approval_policy:=default}"
 : "${codex_sandbox_mode:=default}"
 : "${run_docker_storage_gc_on_create:=false}"
 
 readonly shared_marketplace_name="shared-agent-plugins"
 readonly shared_marketplace_repository="https://github.com/shnri/shared-agent-plugins.git"
-readonly shared_marketplace_ref="v0.21.0"
-readonly shared_marketplace_commit="d8aff47059b786db2ea4f7d1a6c9729dc8421e17"
+readonly shared_marketplace_ref="v0.22.0"
+readonly shared_marketplace_commit="bc8512fcc88bbc7292130b37e7f371d9cd071dd0"
 
 readonly -a codex_shared_plugins=(
   "agent-instruction-maintenance"
-  "matt-pocock-engineering"
   "vercel-react-best-practices"
   "vercel-web-quality"
   "e2e-test-governance"
   "wio"
+)
+
+readonly -a codex_retired_plugins=(
+  "matt-pocock-engineering"
 )
 
 readonly -a claude_shared_plugins=(
@@ -38,9 +44,6 @@ readonly -a claude_shared_plugins=(
 
 readonly -a claude_compatibility_skills=(
   "maintain-agent-instructions:plugins/agent-instruction-maintenance/skills/maintain-agent-instructions"
-  "diagnosing-bugs:plugins/matt-pocock-engineering/skills/diagnosing-bugs"
-  "improve-codebase-architecture:plugins/matt-pocock-engineering/skills/improve-codebase-architecture"
-  "codebase-design:plugins/matt-pocock-engineering/skills/codebase-design"
   "vercel-web-quality-optimizer:plugins/vercel-web-quality/skills/vercel-web-quality-optimizer"
 )
 
@@ -201,6 +204,10 @@ configure_codex_shared_plugins() {
   fi
   shared_checkout_path="${marketplace_root}"
 
+  for plugin in "${codex_retired_plugins[@]}"; do
+    codex plugin remove "${plugin}@${shared_marketplace_name}" >/dev/null 2>&1 || true
+  done
+
   for plugin in "${codex_shared_plugins[@]}"; do
     codex plugin add "${plugin}@${shared_marketplace_name}"
   done
@@ -295,6 +302,10 @@ if [[ "${install_shared_agent_plugins}" == "true" ]]; then
       "${install_codex}" \
       "${install_claude_code}"
   fi
+fi
+
+if [[ "${install_matt_pocock_skills}" == "true" ]]; then
+  sync_matt_pocock_skills "${install_codex}" "${install_claude_code}"
 fi
 
 # Remove the legacy alias used before Codex had persisted permission settings.

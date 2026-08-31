@@ -29,6 +29,9 @@ jobs:
       - name: Test global instructions installer
         run: bash tests/global-instructions.sh
 
+      - name: Test Matt Pocock Skills subscription
+        run: bash tests/matt-pocock-skills.sh
+
       - name: Test user cache ownership
         run: bash tests/cache-ownership.sh
 

@@ -5,6 +5,7 @@
       "web-dev": {
         "installClaudeCode": false,
         "installCodex": false,
+        "installMattPocockSkills": false,
         "installChromium": false,
         "vercelVersion": "none"
       }
