@@ -83,7 +83,6 @@ install -m 0644 \
   printf 'install_claude_code=%q\n' "${INSTALLCLAUDECODE:-true}"
   printf 'install_codex=%q\n' "${INSTALLCODEX:-true}"
   printf 'install_shared_agent_plugins=%q\n' "${INSTALLSHAREDAGENTPLUGINS:-true}"
-  printf 'install_shared_global_instructions=%q\n' "${INSTALLSHAREDGLOBALINSTRUCTIONS:-true}"
   printf 'install_matt_pocock_skills=%q\n' "${INSTALLMATTPOCOCKSKILLS:-true}"
   printf 'codex_approval_policy=%q\n' "${CODEXAPPROVALPOLICY:-default}"
   printf 'codex_sandbox_mode=%q\n' "${CODEXSANDBOXMODE:-default}"

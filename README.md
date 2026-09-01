@@ -16,7 +16,7 @@ consumerの`.devcontainer/devcontainer.json`からOCI Featureを参照します�
 }
 ```
 
-Featureを完全に同じreleaseへ固定する場合は`:2.3.0`、minor更新だけ受け取る場合は`:2.3`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
+Featureを完全に同じreleaseへ固定する場合は`:3.0.0`、minor更新だけ受け取る場合は`:3.0`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
 
 このFeatureはDebian Bookworm系のDev Container imageと、標準の`vscode` user（homeは`/home/vscode`）を対象にしています。
 
@@ -30,12 +30,12 @@ Featureを完全に同じreleaseへ固定する場合は`:2.3.0`、minor更新�
 - Claude Code/CodexのVS Code extension
 - Claude/Codexの認証・設定を保持するproject別named volume
 - Docker daemon境界を表示し、DinDで安全なlabel限定GCを行う`devcontainer-docker-storage`
-- [`shnri/shared-agent-plugins`](https://github.com/shnri/shared-agent-plugins) `v0.22.0`の共通Marketplace、Plugin、Skill、global instructions
+- [`shnri/shared-agent-plugins`](https://github.com/shnri/shared-agent-plugins) `v0.23.0`の共通Marketplace、Plugin、Skill
 - post-createごとに[`mattpocock/skills`](https://github.com/mattpocock/skills)を再走査し、全SkillをClaude CodeとCodexへ同期する購読
 
 Claude CodeとCodexはremote user所有にするため、container作成後に公式standalone installerで導入します。Featureを再実行した場合も既存CLIをスキップせず、最新版へ更新します。
 
-共通Agent Pluginはpublic Marketplaceから固定commitを取得し、両クライアントのネイティブな仕組みへ展開します。Claude Codeでは`/opt/claude-plugin-seed`を`CLAUDE_CODE_PLUGIN_SEED_DIR`として読み込み、Claude Plugin化されていない互換Skillだけを`~/.claude/skills`から固定checkoutへリンクします。Codexではユーザーの`CODEX_HOME`へMarketplaceとPluginをidempotentに登録します。固定releaseにglobal instructionsが含まれる場合、Codexは`~/.codex/AGENTS.md`のmanaged block、Claude Codeは`~/.claude/rules/shared-agent-plugins/`から読み込みます。`~/.claude/CLAUDE.md`と所有外のrulesは変更しません。
+共通Agent Pluginはpublic Marketplaceから固定commitを取得し、両クライアントのネイティブな仕組みへ展開します。Claude Codeでは`/opt/claude-plugin-seed`を`CLAUDE_CODE_PLUGIN_SEED_DIR`として読み込み、Claude Plugin化されていない互換Skillだけを`~/.claude/skills`から固定checkoutへリンクします。Codexではユーザーの`CODEX_HOME`へMarketplaceとPluginをidempotentに登録します。全projectに共通する常時指示はこのFeatureの責務外で、[`shnri/agent-config`](https://github.com/shnri/agent-config)を`git clone`して`install.sh`を実行して接続します。3.0.0以降のpost-createは、2.x系が`~/.codex/AGENTS.md`のmanaged blockと`~/.claude/rules/shared-agent-plugins/`へ配置した旧指示だけを取り除き、それ以外のユーザー指示fileは変更しません。
 
 Matt PocockのSkillは共有Pluginへコピーしません。post-createごとに`npx --yes skills@latest add mattpocock/skills --skill '*' --agent codex claude-code --global --yes`を実行し、その時点で上流に存在する全Skillを`~/.agents/skills`へ同期してClaude Codeへlinkします。既存Skillの更新だけでなく、新しく追加されたSkillも次回post-createで発見されます。これは再現性を優先する固定Pluginとは異なり、明示的に最新上流を購読する境界です。どちらも新しいセッションから利用できます。
 
@@ -46,7 +46,6 @@ Matt PocockのSkillは共有Pluginへコピーしません。post-createごと�
 | `installClaudeCode`         | `true`    | Claude Codeを導入する                                |
 | `installCodex`              | `true`    | Codex CLIを導入する                                  |
 | `installSharedAgentPlugins` | `true`    | Claude/Codexへ固定済み共通PluginとSkillを導入する    |
-| `installSharedGlobalInstructions` | `true` | 共通Plugin導入時に、固定済みのユーザー共通指示を両clientへ導入する |
 | `installMattPocockSkills`   | `true`    | post-create時にMatt Pocockの全Skillを両clientへ同期する |
 | `codexApprovalPolicy`       | `default` | Codex user設定を変更しないか、承認policyを明示する   |
 | `codexSandboxMode`          | `default` | Codex user設定を変更しないか、sandbox modeを明示する |
@@ -123,7 +122,7 @@ Featureごとのversionは`src/<feature>/devcontainer-feature.json`の`version`�
 3. 初回releaseではGitHub Packagesの`shared-devcontainer-features/web-dev`を`Public`へ変更する。repository自体はprivateのままでも構わない。
 4. `ghcr.io/shnri/shared-devcontainer-features/web-dev:2`が認証なしでpullできることを確認する。
 
-publish時に`2.3.0`、`2.3`、`2`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
+publish時に`3.0.0`、`3.0`、`3`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
 
 ## このrepositoryを開発する
 

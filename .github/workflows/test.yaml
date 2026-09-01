@@ -26,7 +26,7 @@ jobs:
       - name: Validate shell scripts
         run: find src test tests -name '*.sh' -print0 | xargs -0 shellcheck
 
-      - name: Test global instructions installer
+      - name: Test legacy global instructions cleanup
         run: bash tests/global-instructions.sh
 
       - name: Test Matt Pocock Skills subscription

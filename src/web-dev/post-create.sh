@@ -13,7 +13,6 @@ source "${feature_dir}/matt-pocock-skills.sh"
 : "${install_claude_code:=true}"
 : "${install_codex:=true}"
 : "${install_shared_agent_plugins:=true}"
-: "${install_shared_global_instructions:=true}"
 : "${install_matt_pocock_skills:=true}"
 : "${codex_approval_policy:=default}"
 : "${codex_sandbox_mode:=default}"
@@ -21,8 +20,8 @@ source "${feature_dir}/matt-pocock-skills.sh"
 
 readonly shared_marketplace_name="shared-agent-plugins"
 readonly shared_marketplace_repository="https://github.com/shnri/shared-agent-plugins.git"
-readonly shared_marketplace_ref="v0.22.0"
-readonly shared_marketplace_commit="bc8512fcc88bbc7292130b37e7f371d9cd071dd0"
+readonly shared_marketplace_ref="v0.23.0"
+readonly shared_marketplace_commit="f4f7091288f7e9d0d049e31ca9cd83cd226cb53c"
 
 readonly -a codex_shared_plugins=(
   "agent-instruction-maintenance"
@@ -46,8 +45,6 @@ readonly -a claude_compatibility_skills=(
   "maintain-agent-instructions:plugins/agent-instruction-maintenance/skills/maintain-agent-instructions"
   "vercel-web-quality-optimizer:plugins/vercel-web-quality/skills/vercel-web-quality-optimizer"
 )
-
-shared_checkout_path=""
 
 ensure_user_directory() {
   local path="$1"
@@ -133,7 +130,6 @@ configure_claude_shared_plugins() {
 
   ensure_user_directory "${marketplace_root}"
   prepare_shared_marketplace_checkout "${marketplace_root}"
-  shared_checkout_path="${checkout_path}"
 
   # Seed metadata is rebuilt from the pinned checkout so repeated postCreate runs
   # cannot keep stale plugin cache entries from an older Feature release.
@@ -202,7 +198,6 @@ configure_codex_shared_plugins() {
     echo "web-dev: remove the existing ${shared_marketplace_name} registration before rebuilding." >&2
     exit 1
   fi
-  shared_checkout_path="${marketplace_root}"
 
   for plugin in "${codex_retired_plugins[@]}"; do
     codex plugin remove "${plugin}@${shared_marketplace_name}" >/dev/null 2>&1 || true
@@ -290,19 +285,11 @@ if [[ "${install_shared_agent_plugins}" == "true" ]]; then
 
     configure_codex_shared_plugins
   fi
-
-  if [[ "${install_shared_global_instructions}" == "true" &&
-    -n "${shared_checkout_path}" ]]; then
-    install_shared_global_instructions \
-      "${shared_checkout_path}" \
-      "${shared_marketplace_ref}" \
-      "${shared_marketplace_commit}" \
-      "${codex_home}" \
-      "${claude_home}" \
-      "${install_codex}" \
-      "${install_claude_code}"
-  fi
 fi
+
+# 常時指示はagent-configが所有する。旧web-devが配置した痕跡だけを取り除く。
+remove_shared_global_instructions \
+  "${codex_home}" "${claude_home}" "${install_codex}" "${install_claude_code}"
 
 if [[ "${install_matt_pocock_skills}" == "true" ]]; then
   sync_matt_pocock_skills "${install_codex}" "${install_claude_code}"
