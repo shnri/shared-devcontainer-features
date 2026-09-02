@@ -43,4 +43,12 @@ diff -u <(
     /shared/shared-devcontainer-features
 ) "${arguments_file}"
 
+cat > "${mock_root}/bin/code" <<'MOCK'
+#!/usr/bin/env bash
+exit 127
+MOCK
+chmod +x "${mock_root}/bin/code"
+
+PATH="${mock_root}/bin:${PATH}" bash "${post_attach_script}"
+
 echo "shared workspace metadata test passed"

@@ -11,7 +11,10 @@ else
   exit 0
 fi
 
-"${editor_cli}" --add \
+if ! "${editor_cli}" --add \
   /shared/agent-config \
   /shared/shared-agent-plugins \
-  /shared/shared-devcontainer-features
+  /shared/shared-devcontainer-features; then
+  # base image上のstub等、利用できないCLIがPATHにある場合もattach自体は妨げない。
+  printf 'Skipping shared repositories: %s is unavailable.\n' "${editor_cli}" >&2
+fi
