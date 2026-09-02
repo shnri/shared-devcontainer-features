@@ -90,13 +90,7 @@
     "CLAUDE_CODE_PLUGIN_SEED_DIR": "/opt/claude-plugin-seed"
   },
   "postCreateCommand": "/usr/local/share/web-dev/post-create.sh",
-  "postAttachCommand": [
-    "code",
-    "--add",
-    "/shared/agent-config",
-    "/shared/shared-agent-plugins",
-    "/shared/shared-devcontainer-features"
-  ],
+  "postAttachCommand": "/usr/local/share/web-dev/post-attach.sh",
   "customizations": {
     "vscode": {
       "extensions": ["anthropic.claude-code", "openai.chatgpt"]

@@ -70,6 +70,7 @@ fi
 
 install -d -m 0755 "${feature_dir}"
 install -m 0755 "${source_dir}/post-create.sh" "${feature_dir}/post-create.sh"
+install -m 0755 "${source_dir}/post-attach.sh" "${feature_dir}/post-attach.sh"
 install -m 0755 "${source_dir}/docker-storage.sh" \
   /usr/local/bin/devcontainer-docker-storage
 install -m 0644 \
