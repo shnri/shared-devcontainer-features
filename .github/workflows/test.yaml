@@ -35,6 +35,12 @@ jobs:
       - name: Test user cache ownership
         run: bash tests/cache-ownership.sh
 
+      - name: Test Codex marketplace migration
+        run: bash tests/codex-marketplace.sh
+
+      - name: Test shared workspace metadata
+        run: bash tests/shared-workspace.sh
+
       - name: Test Docker storage CLI
         run: bash tests/docker-storage.sh
 
@@ -50,6 +56,13 @@ jobs:
 
       - name: Install Dev Container CLI
         run: npm install --global @devcontainers/cli@0.88.0
+
+      - name: Prepare shared repository fixture
+        run: >-
+          mkdir -p
+          /tmp/devcontainercli/container-features-test/agent-repos/agent-config
+          /tmp/devcontainercli/container-features-test/agent-repos/shared-agent-plugins
+          /tmp/devcontainercli/container-features-test/agent-repos/shared-devcontainer-features
 
       - name: Test default Feature
         run: >-

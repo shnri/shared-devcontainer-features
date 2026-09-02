@@ -1,6 +1,6 @@
 {
   "id": "web-dev",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "name": "Shared Web Development",
   "description": "Installs the shared Node.js, Python, browser, cloud, and AI-assisted development toolchain used by shnri web projects.",
   "documentationURL": "https://github.com/shnri/shared-devcontainer-features/tree/main/src/web-dev",
@@ -69,6 +69,11 @@
   },
   "mounts": [
     {
+      "source": "${localWorkspaceFolder}/../agent-repos",
+      "target": "/shared",
+      "type": "bind"
+    },
+    {
       "source": "web-dev-codex-home-${devcontainerId}",
       "target": "/home/vscode/.codex",
       "type": "volume"
@@ -85,6 +90,13 @@
     "CLAUDE_CODE_PLUGIN_SEED_DIR": "/opt/claude-plugin-seed"
   },
   "postCreateCommand": "/usr/local/share/web-dev/post-create.sh",
+  "postAttachCommand": [
+    "code",
+    "--add",
+    "/shared/agent-config",
+    "/shared/shared-agent-plugins",
+    "/shared/shared-devcontainer-features"
+  ],
   "customizations": {
     "vscode": {
       "extensions": ["anthropic.claude-code", "openai.chatgpt"]

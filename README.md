@@ -16,7 +16,7 @@ consumerの`.devcontainer/devcontainer.json`からOCI Featureを参照します�
 }
 ```
 
-Featureを完全に同じreleaseへ固定する場合は`:3.0.0`、minor更新だけ受け取る場合は`:3.0`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
+Featureを完全に同じreleaseへ固定する場合は`:3.1.0`、minor更新だけ受け取る場合は`:3.1`を使います。Dev Containerが生成する`devcontainer-lock.json`もconsumer repositoryへcommitし、実際に解決したversionとdigestを固定してください。
 
 このFeatureはDebian Bookworm系のDev Container imageと、標準の`vscode` user（homeは`/home/vscode`）を対象にしています。
 
@@ -29,6 +29,7 @@ Featureを完全に同じreleaseへ固定する場合は`:3.0.0`、minor更新�
 - post-createごとに最新版へ更新するClaude CodeとCodex
 - Claude Code/CodexのVS Code extension
 - Claude/Codexの認証・設定を保持するproject別named volume
+- hostの共有repo置き場を`/shared`へmountし、VS Code接続時に3つの共有repoをExplorerへ自動追加
 - Docker daemon境界を表示し、DinDで安全なlabel限定GCを行う`devcontainer-docker-storage`
 - [`shnri/shared-agent-plugins`](https://github.com/shnri/shared-agent-plugins) `v0.23.0`の共通Marketplace、Plugin、Skill
 - post-createごとに[`mattpocock/skills`](https://github.com/mattpocock/skills)を再走査し、全SkillをClaude CodeとCodexへ同期する購読
@@ -39,19 +40,34 @@ Claude CodeとCodexはremote user所有にするため、container作成後に�
 
 Matt PocockのSkillは共有Pluginへコピーしません。post-createごとに`npx --yes skills@latest add mattpocock/skills --skill '*' --agent codex claude-code --global --yes`を実行し、その時点で上流に存在する全Skillを`~/.agents/skills`へ同期してClaude Codeへlinkします。既存Skillの更新だけでなく、新しく追加されたSkillも次回post-createで発見されます。これは再現性を優先する固定Pluginとは異なり、明示的に最新上流を購読する境界です。どちらも新しいセッションから利用できます。
 
+## 共有repoをVS Codeへ表示する
+
+Featureはconsumer repositoryの兄弟directory `../agent-repos`をcontainerの`/shared`へbind mountします。Dev Containerを開く前に、host側を次の構成にしてください。
+
+```text
+<projects>/
+├── agent-repos/
+│   ├── agent-config/
+│   ├── shared-agent-plugins/
+│   └── shared-devcontainer-features/
+└── <consumer-project>/
+```
+
+VS Codeがcontainerへ接続するたびにFeatureの`postAttachCommand`が`code --add`を実行し、現在のprojectに加えて3つの共有repoを同じExplorerへ追加します。各consumerに`.code-workspace`や個別の`postAttachCommand`を置く必要はありません。
+
 ## Options
 
-| option                      | default   | 説明                                                 |
-| --------------------------- | --------- | ---------------------------------------------------- |
-| `installClaudeCode`         | `true`    | Claude Codeを導入する                                |
-| `installCodex`              | `true`    | Codex CLIを導入する                                  |
-| `installSharedAgentPlugins` | `true`    | Claude/Codexへ固定済み共通PluginとSkillを導入する    |
-| `installMattPocockSkills`   | `true`    | post-create時にMatt Pocockの全Skillを両clientへ同期する |
-| `codexApprovalPolicy`       | `default` | Codex user設定を変更しないか、承認policyを明示する   |
-| `codexSandboxMode`          | `default` | Codex user設定を変更しないか、sandbox modeを明示する |
-| `runDockerStorageGcOnCreate` | `false` | 専用DinDへ接続するconsumerだけ、postCreate時の限定GCを有効化する |
-| `installChromium`           | `true`    | `/usr/bin/chromium`を導入する                        |
-| `vercelVersion`             | `58.9.1`  | Vercel CLI version。`none`で導入しない               |
+| option                       | default   | 説明                                                             |
+| ---------------------------- | --------- | ---------------------------------------------------------------- |
+| `installClaudeCode`          | `true`    | Claude Codeを導入する                                            |
+| `installCodex`               | `true`    | Codex CLIを導入する                                              |
+| `installSharedAgentPlugins`  | `true`    | Claude/Codexへ固定済み共通PluginとSkillを導入する                |
+| `installMattPocockSkills`    | `true`    | post-create時にMatt Pocockの全Skillを両clientへ同期する          |
+| `codexApprovalPolicy`        | `default` | Codex user設定を変更しないか、承認policyを明示する               |
+| `codexSandboxMode`           | `default` | Codex user設定を変更しないか、sandbox modeを明示する             |
+| `runDockerStorageGcOnCreate` | `false`   | 専用DinDへ接続するconsumerだけ、postCreate時の限定GCを有効化する |
+| `installChromium`            | `true`    | `/usr/bin/chromium`を導入する                                    |
+| `vercelVersion`              | `58.9.1`  | Vercel CLI version。`none`で導入しない                           |
 
 `codexApprovalPolicy`と`codexSandboxMode`の既定値は`default`です。Featureはconsumerの安全設定を暗黙に弱めません。Dev Container自体を外側の隔離境界として扱うprojectだけが、例えば次のように明示します。
 
@@ -122,7 +138,7 @@ Featureごとのversionは`src/<feature>/devcontainer-feature.json`の`version`�
 3. 初回releaseではGitHub Packagesの`shared-devcontainer-features/web-dev`を`Public`へ変更する。repository自体はprivateのままでも構わない。
 4. `ghcr.io/shnri/shared-devcontainer-features/web-dev:2`が認証なしでpullできることを確認する。
 
-publish時に`3.0.0`、`3.0`、`3`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
+publish時に`3.1.0`、`3.1`、`3`、`latest`のOCI tagがFeature仕様に従って更新されます。Featureのソースとpackageに機密情報を含めないでください。
 
 ## このrepositoryを開発する
 

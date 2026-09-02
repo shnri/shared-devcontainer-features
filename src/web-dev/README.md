@@ -10,6 +10,8 @@ Installs the shared web development toolchain used by shnri projects.
 
 See the [collection README](../../README.md) for included tools, Docker storage GC opt-in, persistence behavior, version selection, and release instructions.
 
+The Feature bind-mounts the host's sibling `../agent-repos` directory at `/shared` and adds `agent-config`, `shared-agent-plugins`, and `shared-devcontainer-features` to the current VS Code window after every attach. See the collection README for the required host directory layout.
+
 ## Docker storage safety
 
 The Feature installs `devcontainer-docker-storage`. It always acts on the daemon selected

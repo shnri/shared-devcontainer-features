@@ -171,13 +171,50 @@ configure_claude_shared_plugins() {
   done
 }
 
+read_toml_section_string() {
+  local config="$1"
+  local section="$2"
+  local key="$3"
+
+  awk -v section="${section}" -v key="${key}" '
+    function trim(value) {
+      sub(/^[[:space:]]+/, "", value)
+      sub(/[[:space:]]+$/, "", value)
+      return value
+    }
+
+    trim($0) == "[" section "]" {
+      in_section = 1
+      next
+    }
+    in_section && trim($0) ~ /^\[/ { exit }
+    in_section && $0 ~ "^[[:space:]]*" key "[[:space:]]*=" {
+      value = $0
+      sub(/^[^=]*=[[:space:]]*/, "", value)
+      value = trim(value)
+      if (value ~ /^\".*\"$/) {
+        sub(/^\"/, "", value)
+        sub(/\"$/, "", value)
+      }
+      print value
+      exit
+    }
+  ' "${config}"
+}
+
 configure_codex_shared_plugins() {
   local checkout_commit=""
+  local marketplace_config_ref=""
+  local marketplace_config_source=""
+  local marketplace_config_source_type=""
+  local marketplace_details=""
   local marketplace_root=""
+  local marketplace_source=""
+  local marketplace_source_type=""
   local plugin=""
+  local -a marketplace_fields=()
 
-  codex plugin marketplace add shnri/shared-agent-plugins --ref "${shared_marketplace_ref}"
-  marketplace_root="$(
+  marketplace_details="$(
     codex plugin marketplace list --json |
       node -e '
         let input = "";
@@ -187,15 +224,70 @@ configure_codex_shared_plugins() {
           const marketplace = JSON.parse(input).marketplaces.find(
             ({ name }) => name === "shared-agent-plugins",
           );
-          if (!marketplace) process.exit(1);
-          process.stdout.write(marketplace.root);
+          if (!marketplace) return;
+          const source = marketplace.marketplaceSource ?? {};
+          process.stdout.write([
+            source.sourceType ?? "",
+            source.source ?? "",
+            marketplace.root ?? "",
+          ].join("\n"));
         });
       '
   )"
+  if [[ -n "${marketplace_details}" ]]; then
+    mapfile -t marketplace_fields <<< "${marketplace_details}"
+    marketplace_source_type="${marketplace_fields[0]:-}"
+    marketplace_source="${marketplace_fields[1]:-}"
+    marketplace_root="${marketplace_fields[2]:-}"
+    marketplace_config_source_type="$(
+      read_toml_section_string "${codex_config}" \
+        "marketplaces.${shared_marketplace_name}" "source_type"
+    )"
+    marketplace_config_source="$(
+      read_toml_section_string "${codex_config}" \
+        "marketplaces.${shared_marketplace_name}" "source"
+    )"
+    marketplace_config_ref="$(
+      read_toml_section_string "${codex_config}" \
+        "marketplaces.${shared_marketplace_name}" "ref"
+    )"
+    checkout_commit="$(git -C "${marketplace_root}" rev-parse HEAD 2>/dev/null || true)"
+
+    if [[ "${marketplace_source_type}" != "git" ||
+      "${marketplace_source}" != "${shared_marketplace_repository}" ||
+      "${marketplace_config_source_type}" != "git" ||
+      "${marketplace_config_source}" != "${shared_marketplace_repository}" ||
+      "${marketplace_config_ref}" != "${shared_marketplace_ref}" ||
+      "${checkout_commit}" != "${shared_marketplace_commit}" ]]; then
+      echo "web-dev: migrating ${shared_marketplace_name} to ${shared_marketplace_ref}..."
+      codex plugin marketplace remove "${shared_marketplace_name}"
+      marketplace_root=""
+    fi
+  fi
+
+  if [[ -z "${marketplace_root}" ]]; then
+    codex plugin marketplace add "${shared_marketplace_repository}" \
+      --ref "${shared_marketplace_ref}"
+    marketplace_root="$(
+      codex plugin marketplace list --json |
+        node -e '
+          let input = "";
+          process.stdin.setEncoding("utf8");
+          process.stdin.on("data", (chunk) => { input += chunk; });
+          process.stdin.on("end", () => {
+            const marketplace = JSON.parse(input).marketplaces.find(
+              ({ name }) => name === "shared-agent-plugins",
+            );
+            if (!marketplace?.root) process.exit(1);
+            process.stdout.write(marketplace.root);
+          });
+        '
+    )"
+  fi
+
   checkout_commit="$(git -C "${marketplace_root}" rev-parse HEAD)"
   if [[ "${checkout_commit}" != "${shared_marketplace_commit}" ]]; then
     echo "web-dev: Codex marketplace resolved to unexpected commit ${checkout_commit}." >&2
-    echo "web-dev: remove the existing ${shared_marketplace_name} registration before rebuilding." >&2
     exit 1
   fi
 
